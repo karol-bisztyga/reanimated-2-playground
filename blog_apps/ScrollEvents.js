@@ -86,9 +86,7 @@ const RightScroll = ({
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       translation.value =
-        (event.contentOffset.y /
-          (event.contentSize.height - event.layoutMeasurement.height)) *
-        (event.layoutMeasurement.height - BOX_HEIGHT);
+        (event.contentOffset.y / contentHeight.value) * layoutHeight.value;
     },
   });
 
