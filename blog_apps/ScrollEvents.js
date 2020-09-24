@@ -12,11 +12,12 @@ import {
   PanGestureHandler,
   TapGestureHandler,
 } from 'react-native-gesture-handler';
+import {Header} from 'react-navigation-stack';
 
 const NUMBER_OF_ITEMS = 30;
 const BOX_WIDTH = 40;
 const BOX_HEIGHT = 60;
-const windowHeight = Dimensions.get('window').height;
+const windowHeight = Dimensions.get('window').height - Header.HEIGHT;
 
 const LeftScroll = ({
   animatedRef,
@@ -30,10 +31,10 @@ const LeftScroll = ({
       Math.max(eventValue, 0),
       layoutHeight.value - BOX_HEIGHT,
     );
-    const scr =
+    const scrollDestination =
       (translation.value * contentHeight.value) /
       (layoutHeight.value - BOX_HEIGHT);
-    scrollTo(animatedRef, 0, scr, false);
+    scrollTo(animatedRef, 0, scrollDestination, false);
   };
 
   const panHandler = useAnimatedGestureHandler({
