@@ -14,17 +14,25 @@ import {
 } from 'react-native-gesture-handler';
 import {Header} from 'react-navigation-stack';
 
-const NUMBER_OF_ITEMS = 30;
+const NUMBER_OF_ITEMS = 100;
 const BOX_WIDTH = 40;
 const BOX_HEIGHT = 60;
 const windowHeight = Dimensions.get('window').height - Header.HEIGHT;
 
-const LeftScroll = ({
-  animatedRef,
-  layoutHeight,
-  contentHeight,
-  translation,
-}) => {
+function ScrollExample() {
+  const animatedRef = useAnimatedRef();
+  const translation = useSharedValue(0);
+  const contentHeight = useSharedValue(0);
+  const layoutHeight = useSharedValue(windowHeight);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      translation.value =
+        (event.contentOffset.y / contentHeight.value) *
+        (layoutHeight.value - BOX_HEIGHT);
+    },
+  });
+
   const performScroll = (eventValue) => {
     'worklet';
     translation.value = Math.min(
@@ -65,72 +73,33 @@ const LeftScroll = ({
   });
 
   return (
-    <PanGestureHandler onGestureEvent={panHandler}>
-      <Animated.View>
-        <TapGestureHandler onGestureEvent={tapHandler}>
-          <Animated.View style={styles.left}>
-            <Animated.View style={[styles.box, animatedStyles]} />
-          </Animated.View>
-        </TapGestureHandler>
-      </Animated.View>
-    </PanGestureHandler>
-  );
-};
-
-const RightScroll = ({
-  animatedRef,
-  layoutHeight,
-  contentHeight,
-  translation,
-}) => {
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      translation.value =
-        (event.contentOffset.y / contentHeight.value) *
-        (layoutHeight.value - BOX_HEIGHT);
-    },
-  });
-
-  return (
-    <View style={styles.right}>
-      <Animated.ScrollView
-        ref={animatedRef}
-        style={styles.scroll}
-        scrollEventThrottle={1}
-        onScroll={scrollHandler}
-        onContentSizeChange={(width, height) => {
-          contentHeight.value = height - layoutHeight.value;
-        }}>
-        {Array.from({length: NUMBER_OF_ITEMS}).map((_, i) => (
-          <View key={i} style={styles.item}>
-            <Text>{`item ${i}`}</Text>
-          </View>
-        ))}
-      </Animated.ScrollView>
-    </View>
-  );
-};
-
-function ScrollExample() {
-  const animatedRef = useAnimatedRef();
-  const translation = useSharedValue(0);
-  const contentHeight = useSharedValue(0);
-  const layoutHeight = useSharedValue(windowHeight);
-
-  return (
     <View style={styles.container}>
-      <LeftScroll
-        animatedRef={animatedRef}
-        translation={translation}
-        contentHeight={contentHeight}
-        layoutHeight={layoutHeight}
-      />
-      <RightScroll
-        animatedRef={animatedRef}
-        translation={translation}
-        contentHeight={contentHeight}
-        layoutHeight={layoutHeight}
-      />
+      <PanGestureHandler onGestureEvent={panHandler}>
+        <Animated.View>
+          <TapGestureHandler onGestureEvent={tapHandler}>
+            <Animated.View style={styles.left}>
+              <Animated.View style={[styles.box, animatedStyles]} />
+            </Animated.View>
+          </TapGestureHandler>
+        </Animated.View>
+      </PanGestureHandler>
+
+      <View style={styles.right}>
+        <Animated.ScrollView
+          ref={animatedRef}
+          style={styles.scroll}
+          scrollEventThrottle={1}
+          onScroll={scrollHandler}
+          onContentSizeChange={(width, height) => {
+            contentHeight.value = height - layoutHeight.value;
+          }}>
+          {Array.from({length: NUMBER_OF_ITEMS}).map((_, i) => (
+            <View key={i} style={styles.item}>
+              <Text>{`item ${i}`}</Text>
+            </View>
+          ))}
+        </Animated.ScrollView>
+      </View>
     </View>
   );
 }
