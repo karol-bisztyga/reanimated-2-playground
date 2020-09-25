@@ -5,8 +5,8 @@ import {RectButton, ScrollView} from 'react-native-gesture-handler';
 import {createAppContainer, createSwitchNavigator} from 'react-navigation';
 import {createStackNavigator} from 'react-navigation-stack';
 
-import Events from './blog_apps/Events';
-import ScrollEvents from './blog_apps/ScrollEvents';
+import Events from './blog_apps/events/Events';
+import ScrollEvents from './blog_apps/scroll_events/ScrollEvents';
 
 const SCREENS = {
   Events: {
@@ -52,19 +52,6 @@ export function MainScreenItem({item, onPressItem, screens}) {
     <RectButton style={styles.button} onPress={() => onPressItem(item)}>
       <Text style={styles.buttonText}>{screens[key].title || key}</Text>
     </RectButton>
-  );
-}
-
-function LaunchReanimated1({navigation}) {
-  return (
-    <>
-      <ItemSeparator />
-      <RectButton
-        style={styles.button}
-        onPress={() => navigation.navigate('Reanimated1')}>
-        <Text style={styles.buttonText}>👵 Reanimated 1.x Examples</Text>
-      </RectButton>
-    </>
   );
 }
 

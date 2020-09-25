@@ -24,6 +24,7 @@ const LeftScroll = ({
   layoutHeight,
   contentHeight,
   translation,
+  activeDragging,
 }) => {
   const performScroll = (eventValue) => {
     'worklet';
@@ -40,9 +41,13 @@ const LeftScroll = ({
   const panHandler = useAnimatedGestureHandler({
     onStart: (e, ctx) => {
       ctx.start = e.y - BOX_HEIGHT / 2;
+      activeDragging.value = true;
     },
     onActive: (e, ctx) => {
       performScroll(e.translationY + ctx.start);
+    },
+    onEnd: (e, ctx) => {
+      activeDragging.value = false;
     },
   });
 
@@ -56,6 +61,7 @@ const LeftScroll = ({
 
   const animatedStyles = useAnimatedStyle(() => {
     return {
+      opacity: activeDragging.value ? 0.8 : 0.4,
       transform: [
         {
           translateY: translation.value,
@@ -82,12 +88,22 @@ const RightScroll = ({
   layoutHeight,
   contentHeight,
   translation,
+  activeDragging,
 }) => {
   const scrollHandler = useAnimatedScrollHandler({
+    onBeginDrag: (e) => {
+      activeDragging.value = true;
+    },
+    onEndDrag: (e) => {
+      activeDragging.value = false;
+    },
     onScroll: (event) => {
       translation.value =
         (event.contentOffset.y / contentHeight.value) *
         (layoutHeight.value - BOX_HEIGHT);
+    },
+    onMomentumBegin: (e) => {
+      activeDragging.value = false;
     },
   });
 
@@ -116,6 +132,7 @@ function ScrollExample() {
   const translation = useSharedValue(0);
   const contentHeight = useSharedValue(0);
   const layoutHeight = useSharedValue(windowHeight);
+  const activeDragging = useSharedValue(false);
 
   return (
     <View style={styles.container}>
@@ -124,12 +141,14 @@ function ScrollExample() {
         translation={translation}
         contentHeight={contentHeight}
         layoutHeight={layoutHeight}
+        activeDragging={activeDragging}
       />
       <RightScroll
         animatedRef={animatedRef}
         translation={translation}
         contentHeight={contentHeight}
         layoutHeight={layoutHeight}
+        activeDragging={activeDragging}
       />
     </View>
   );
@@ -156,7 +175,7 @@ const styles = StyleSheet.create({
   },
   box: {
     alignSelf: 'center',
-    backgroundColor: '#D4E6F1',
+    backgroundColor: 'orange',
     width: BOX_WIDTH,
     height: BOX_HEIGHT,
   },
