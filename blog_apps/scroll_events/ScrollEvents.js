@@ -1,139 +1,179 @@
 import React from 'react';
-import {View, StyleSheet, Platform, Dimensions, Text} from 'react-native';
+import {View, StyleSheet, Dimensions, Button} from 'react-native';
 import Animated, {
   useSharedValue,
-  useAnimatedGestureHandler,
   useAnimatedStyle,
   useAnimatedScrollHandler,
   useAnimatedRef,
   scrollTo,
+  runOnUI,
 } from 'react-native-reanimated';
-import {
-  PanGestureHandler,
-  TapGestureHandler,
-} from 'react-native-gesture-handler';
-import {Header} from 'react-navigation-stack';
 
-const NUMBER_OF_ITEMS = 100;
-const BOX_WIDTH = 40;
-const BOX_HEIGHT = 60;
-const windowHeight = Dimensions.get('window').height - Header.HEIGHT;
+const NUMBER_OF_ITEMS = 20;
+const ITEM_SIZE = {
+  size: 120,
+  margin: 70,
+};
 
 function ScrollExample() {
+  const position = useSharedValue(0);
+  const scrollWidth = useSharedValue(0);
   const animatedRef = useAnimatedRef();
-  const translation = useSharedValue(0);
-  const contentHeight = useSharedValue(0);
-  const layoutHeight = useSharedValue(windowHeight);
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      translation.value =
-        (event.contentOffset.y / contentHeight.value) *
-        (layoutHeight.value - BOX_HEIGHT);
-    },
-  });
+  const itemTotalSize = ITEM_SIZE.size + ITEM_SIZE.margin * 2;
+  const screenWidth = Dimensions.get('window').width;
+  const borderMargin = screenWidth / 2 - itemTotalSize / 2 + ITEM_SIZE.margin;
 
-  const performScroll = (eventValue) => {
+  const scrollToNearestItem = (offset) => {
     'worklet';
-    translation.value = Math.min(
-      Math.max(eventValue, 0),
-      layoutHeight.value - BOX_HEIGHT,
-    );
-    const scrollDestination =
-      (translation.value * contentHeight.value) /
-      (layoutHeight.value - BOX_HEIGHT);
-    scrollTo(animatedRef, 0, scrollDestination, false);
+    let minDistance;
+    let minDistanceIndex = 0;
+    for (let i = 0; i < NUMBER_OF_ITEMS; ++i) {
+      const distance = Math.abs(i * itemTotalSize - offset);
+      if (minDistance === undefined) {
+        minDistance = distance;
+      } else {
+        if (distance < minDistance) {
+          minDistance = distance;
+          minDistanceIndex = i;
+        }
+      }
+    }
+
+    scrollTo(animatedRef, minDistanceIndex * itemTotalSize, 0, true);
   };
 
-  const panHandler = useAnimatedGestureHandler({
-    onStart: (e, ctx) => {
-      ctx.start = e.y - BOX_HEIGHT / 2;
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (e, ctx) => {
+      position.value = e.contentOffset.x;
+      //console.log('scroll', position.value);
     },
-    onActive: (e, ctx) => {
-      performScroll(e.translationY + ctx.start);
+    onEndDrag: (e, ctx) => {
+      scrollToNearestItem(e.contentOffset.x);
     },
-  });
-
-  const tapHandler = useAnimatedGestureHandler({
-    onStart: (e, ctx) => {
-      if (e.y > 0) {
-        performScroll(e.y - BOX_HEIGHT / 2);
-      }
+    onMomentumEnd: (e, ctx) => {
+      scrollToNearestItem(e.contentOffset.x);
     },
   });
 
-  const animatedStyles = useAnimatedStyle(() => {
-    return {
-      transform: [
-        {
-          translateY: translation.value,
-        },
-      ],
-    };
-  });
+  // buttons logic
+  const buttons = [
+    {
+      title: '<<',
+      callback: () => {
+        runOnUI(() => {
+          'worklet';
+          scrollTo(animatedRef, 0, 0, true);
+        })();
+      },
+    },
+    {
+      title: '<',
+      callback: () => {
+        runOnUI(() => {
+          'worklet';
+          scrollTo(animatedRef, position.value - itemTotalSize, 0, true);
+        })();
+      },
+    },
+    {
+      title: '>',
+      callback: () => {
+        runOnUI(() => {
+          'worklet';
+          scrollTo(animatedRef, position.value + itemTotalSize, 0, true);
+        })();
+      },
+    },
+    {
+      title: '>>',
+      callback: () => {
+        // scroll to last
+        runOnUI(() => {
+          'worklet';
+          scrollTo(animatedRef, Infinity, 0, true);
+        })();
+      },
+    },
+  ];
 
   return (
-    <View style={styles.container}>
-      <PanGestureHandler onGestureEvent={panHandler}>
-        <Animated.View>
-          <TapGestureHandler onGestureEvent={tapHandler}>
-            <Animated.View style={styles.left}>
-              <Animated.View style={[styles.box, animatedStyles]} />
-            </Animated.View>
-          </TapGestureHandler>
-        </Animated.View>
-      </PanGestureHandler>
+    <View>
+      <Animated.ScrollView
+        ref={animatedRef}
+        horizontal={true}
+        style={styles.scroll}
+        scrollEventThrottle={1}
+        onScroll={scrollHandler}
+        onContentSizeChange={(width, height) => {
+          scrollWidth.value = width;
+        }}>
+        {Array.from({length: NUMBER_OF_ITEMS}).map((_, i) => {
+          const uas = useAnimatedStyle(() => {
+            const style = {};
+            const relativeDistance = position.value - i * itemTotalSize;
+            const distance = Math.abs(relativeDistance);
+            const itemDistance = distance / itemTotalSize;
+            let opacity;
+            const translateY = itemTotalSize * itemDistance;
+            let rotateZ = itemDistance * 2;
+            rotateZ = relativeDistance > 0 ? -rotateZ : rotateZ;
+            if (itemDistance < 0.5) {
+              opacity = 1;
+            } else if (itemDistance >= 0.5 && itemDistance <= 2) {
+              opacity = 0.3;
+            } else {
+              opacity = 0;
+            }
+            style.opacity = opacity;
+            //console.log('distance', distance, itemTotalSize, itemDistance);
+            if (i === 0) {
+              style.marginLeft = borderMargin;
+            } else if (i === NUMBER_OF_ITEMS - 1) {
+              style.marginRight = borderMargin;
+            }
+            style.transform = [{translateY}, {rotateZ}];
+            return style;
+          });
+          return (
+            <Animated.View
+              key={i}
+              style={[
+                styles.item,
+                {backgroundColor: i % 2 ? 'purple' : 'orange'},
+                uas,
+              ]}
+            />
+          );
+        })}
+      </Animated.ScrollView>
 
-      <View style={styles.right}>
-        <Animated.ScrollView
-          ref={animatedRef}
-          style={styles.scroll}
-          scrollEventThrottle={1}
-          onScroll={scrollHandler}
-          onContentSizeChange={(width, height) => {
-            contentHeight.value = height - layoutHeight.value;
-          }}>
-          {Array.from({length: NUMBER_OF_ITEMS}).map((_, i) => (
-            <View key={i} style={styles.item}>
-              <Text>{`item ${i}`}</Text>
+      <View style={styles.buttonWrapper}>
+        {buttons.map(({title, callback}) => {
+          return (
+            <View style={styles.button}>
+              <Button title={title} onPress={callback} />
             </View>
-          ))}
-        </Animated.ScrollView>
+          );
+        })}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  left: {
-    flex: 1,
-    height: Platform.OS === 'web' ? windowHeight : undefined,
-    overflow: 'hidden',
-  },
-  right: {
-    flex: 8,
-    height: Platform.OS === 'web' ? windowHeight : undefined,
-    overflow: 'hidden',
-  },
-  scroll: {
-    flex: 1,
-    backgroundColor: '#EBEDEF',
-  },
-  box: {
-    alignSelf: 'center',
-    backgroundColor: 'orange',
-    width: BOX_WIDTH,
-    height: BOX_HEIGHT,
-  },
   item: {
-    borderWidth: 1,
-    borderColor: '#AEB6BF',
-    padding: 20,
-    height: BOX_HEIGHT,
+    width: ITEM_SIZE.size,
+    height: ITEM_SIZE.size,
+    margin: ITEM_SIZE.margin,
+  },
+  buttonWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  button: {
+    flex: 1,
   },
 });
 
