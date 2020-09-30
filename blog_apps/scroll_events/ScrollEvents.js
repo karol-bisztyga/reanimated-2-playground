@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import {PanGestureHandler} from 'react-native-gesture-handler';
 
-const data = [
+let data = [
   {artist: 'Nirvana', song: 'Smells Like Teen Spirit'},
   {artist: 'John Lennon', song: 'Imagine'},
   {artist: 'U2', song: 'One'},
@@ -65,20 +65,25 @@ const data = [
   {artist: 'The Emotions', song: 'Best Of My Love'},
 ];
 
+data = data.slice(0, 10);
+
 const ITEM_SIZE = {
-  size: 250,
+  size: 200,
   margin: 70,
 };
 const SCROLL_MARGIN = 20;
 const IPOD_MARGIN = 20;
 const SCREEN_WIDTH =
   Dimensions.get('window').width - IPOD_MARGIN * 2 - SCROLL_MARGIN * 2;
+const SCREEN_HEIGHT =  Dimensions.get('window').height;
 const BIG_BALL_SIZE = 200;
 const BIG_BALL_MARGIN = 0;
 const SMALL_BALL_SIZE = 50;
 const INNER_BALL_SIZE =
   BIG_BALL_SIZE - SMALL_BALL_SIZE * 2 - BIG_BALL_MARGIN * 2;
-const DEFAULT_COVER_URI =
+let xBallCenter = BIG_BALL_SIZE/2;
+let yBallCenter = BIG_BALL_SIZE/2;
+const DEFAULT_COVER_URI = 
   'https://e7.pngegg.com/pngimages/950/513/png-clipart-eighth-note-musical-note-stem-notes-music-download-graphic-arts.png';
 
 function ScrollExample() {
@@ -112,11 +117,8 @@ function ScrollExample() {
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e, ctx) => {
-      if (scrollingCircle.value) {
-        return;
-      }
       position.value = e.contentOffset.x;
-      console.log('scroll', position.value);
+      //console.log('scroll', position.value);
     },
     onEndDrag: (e, ctx) => {
       scrollToNearestItem(e.contentOffset.x);
@@ -129,12 +131,33 @@ function ScrollExample() {
   const handler = useAnimatedGestureHandler({
     onStart: (e, ctx) => {
       ctx.start = {x: e.x, y: e.y};
+      ctx.last = ctx.start;
     },
     onActive: (e, ctx) => {
-      scrollTo(animatedRef, position.value + e.translationX * 3, 0, true);
+      const currentPoz = {x: e.x, y: e.y};
+      const lastPoz = ctx.last;
+      ctx.last = currentPoz;
+      if (currentPoz.x === lastPoz.x && lastPoz.y === currentPoz.y) { // no change so far
+        return;
+      }
+      const changeVector = {x: currentPoz.x - lastPoz.x, y: currentPoz.y - lastPoz.y };
+      const toCenterV = {x: xBallCenter - lastPoz.x, y: yBallCenter - lastPoz.y};
+      const crossProd = changeVector.x * toCenterV.y - changeVector.y * toCenterV.x;
+      if (crossProd === 0) {
+        return;
+      }
+      const dist = Math.sqrt(changeVector.x ** 2 + changeVector.y ** 2);
+      let sign;
+      if (crossProd < 0) { // up
+        sign = -1;
+      } else { // down
+        sign = 1;
+      }
+      position.value = position.value + sign * dist;
+      scrollTo(animatedRef, position.value, 0, false);
     },
     onEnd: (e, ctx) => {
-      scrollingCircle.value = false;
+
     },
   });
 
@@ -189,7 +212,7 @@ function ScrollExample() {
       </Animated.ScrollView>
 
       <PanGestureHandler onGestureEvent={handler}>
-        <Animated.View style={styles.ballWrapper}>
+        <Animated.View style={styles.ballWrapper} >
           <View style={styles.innerBall} />
         </Animated.View>
       </PanGestureHandler>
