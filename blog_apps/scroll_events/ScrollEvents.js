@@ -1,14 +1,14 @@
 import React from 'react';
-import {View, StyleSheet, Dimensions, Button, Image, Text} from 'react-native';
+import {View, StyleSheet, Dimensions, Image, Text} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useAnimatedScrollHandler,
   useAnimatedRef,
   scrollTo,
-  runOnUI,
   useAnimatedGestureHandler,
-  useDerivedValue,
+  Extrapolate,
+  interpolate,
 } from 'react-native-reanimated';
 import {PanGestureHandler} from 'react-native-gesture-handler';
 
@@ -68,22 +68,19 @@ let data = [
 data = data.slice(0, 10);
 
 const ITEM_SIZE = {
-  size: 200,
+  size: 250,
   margin: 70,
 };
 const SCROLL_MARGIN = 20;
 const IPOD_MARGIN = 20;
 const SCREEN_WIDTH =
   Dimensions.get('window').width - IPOD_MARGIN * 2 - SCROLL_MARGIN * 2;
-const SCREEN_HEIGHT =  Dimensions.get('window').height;
 const BIG_BALL_SIZE = 200;
 const BIG_BALL_MARGIN = 0;
 const SMALL_BALL_SIZE = 50;
 const INNER_BALL_SIZE =
   BIG_BALL_SIZE - SMALL_BALL_SIZE * 2 - BIG_BALL_MARGIN * 2;
-let xBallCenter = BIG_BALL_SIZE/2;
-let yBallCenter = BIG_BALL_SIZE/2;
-const DEFAULT_COVER_URI = 
+const DEFAULT_COVER_URI =
   'https://e7.pngegg.com/pngimages/950/513/png-clipart-eighth-note-musical-note-stem-notes-music-download-graphic-arts.png';
 
 function ScrollExample() {
@@ -113,12 +110,9 @@ function ScrollExample() {
     scrollTo(animatedRef, minDistanceIndex * itemTotalSize, 0, true);
   };
 
-  const scrollingCircle = useSharedValue(false);
-
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e, ctx) => {
       position.value = e.contentOffset.x;
-      //console.log('scroll', position.value);
     },
     onEndDrag: (e, ctx) => {
       scrollToNearestItem(e.contentOffset.x);
@@ -137,27 +131,37 @@ function ScrollExample() {
       const currentPoz = {x: e.x, y: e.y};
       const lastPoz = ctx.last;
       ctx.last = currentPoz;
-      if (currentPoz.x === lastPoz.x && lastPoz.y === currentPoz.y) { // no change so far
+      if (currentPoz.x === lastPoz.x && lastPoz.y === currentPoz.y) {
+        // no change so far
         return;
       }
-      const changeVector = {x: currentPoz.x - lastPoz.x, y: currentPoz.y - lastPoz.y };
-      const toCenterV = {x: xBallCenter - lastPoz.x, y: yBallCenter - lastPoz.y};
-      const crossProd = changeVector.x * toCenterV.y - changeVector.y * toCenterV.x;
+      const changeVector = {
+        x: currentPoz.x - lastPoz.x,
+        y: currentPoz.y - lastPoz.y,
+      };
+      const toCenterV = {
+        x: BIG_BALL_SIZE / 2 - lastPoz.x,
+        y: BIG_BALL_SIZE / 2 - lastPoz.y,
+      };
+      const crossProd =
+        changeVector.x * toCenterV.y - changeVector.y * toCenterV.x;
       if (crossProd === 0) {
         return;
       }
       const dist = Math.sqrt(changeVector.x ** 2 + changeVector.y ** 2);
-      let sign;
-      if (crossProd < 0) { // up
-        sign = -1;
-      } else { // down
-        sign = 1;
-      }
-      position.value = position.value + sign * dist;
+      // up or down
+      const sign = crossProd < 0 ? -1 : 1;
+      const arr = [0, itemTotalSize * (data.length - 1)];
+      position.value = interpolate(
+        position.value + sign * dist * 5,
+        arr,
+        arr,
+        Extrapolate.CLAMP,
+      );
       scrollTo(animatedRef, position.value, 0, false);
     },
     onEnd: (e, ctx) => {
-
+      scrollToNearestItem(position.value);
     },
   });
 
@@ -181,7 +185,7 @@ function ScrollExample() {
             let opacity;
             if (itemDistance < 0.5) {
               opacity = 1;
-            } else if (itemDistance >= 0.5 && itemDistance <= 3) {
+            } else if (itemDistance <= 3) {
               opacity = 0.3;
             } else {
               opacity = 0;
@@ -212,7 +216,7 @@ function ScrollExample() {
       </Animated.ScrollView>
 
       <PanGestureHandler onGestureEvent={handler}>
-        <Animated.View style={styles.ballWrapper} >
+        <Animated.View style={styles.ballWrapper}>
           <View style={styles.innerBall} />
         </Animated.View>
       </PanGestureHandler>
