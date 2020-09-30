@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, StyleSheet, Dimensions, Button} from 'react-native';
+import {View, StyleSheet, Dimensions, Button, Image, Text} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,13 +7,79 @@ import Animated, {
   useAnimatedRef,
   scrollTo,
   runOnUI,
+  useAnimatedGestureHandler,
+  useDerivedValue,
 } from 'react-native-reanimated';
+import {PanGestureHandler} from 'react-native-gesture-handler';
 
-const NUMBER_OF_ITEMS = 20;
+const data = [
+  {artist: 'Nirvana', song: 'Smells Like Teen Spirit'},
+  {artist: 'John Lennon', song: 'Imagine'},
+  {artist: 'U2', song: 'One'},
+  {artist: 'Michael Jackson', song: 'Billie Jean'},
+  {artist: 'Queen', song: 'Bohemian Rhapsody'},
+  {artist: 'The Beatles', song: 'Hey Jude'},
+  {artist: 'Bob Dylan', song: 'Like A Rolling Stone'},
+  {artist: 'Rolling Stones', song: "I Can't Get No Satisfaction"},
+  {artist: 'Sex Pistols', song: 'God Save The Queen'},
+  {artist: "Guns N' Roses", song: "Sweet Child O'Mine"},
+  {artist: 'The Clash', song: 'London Calling'},
+  {artist: 'The Kinks', song: 'Waterloo Sunset'},
+  {artist: 'The Eagles', song: 'Hotel California'},
+  {artist: 'Elton John', song: 'Your Song'},
+  {artist: 'Led Zeppelin', song: 'Stairway To Heaven'},
+  {artist: 'Chubby Checker', song: 'The Twist'},
+  {artist: 'Oasis', song: 'Live Forever'},
+  {artist: 'Whitney Houston', song: 'I Will Always Love You'},
+  {artist: 'David Bowie', song: 'Life On Mars?'},
+  {artist: 'Elvis Presley', song: 'Heartbreak Hotel'},
+  {artist: 'Judy Garland', song: 'Over The Rainbow'},
+  {artist: 'Marvin Gaye', song: "What's Goin' On"},
+  {artist: 'Bruce Springsteen', song: 'Born To Run'},
+  {artist: 'The Ronettes', song: 'Be My Baby'},
+  {artist: 'Radiohead', song: 'Creep'},
+  {artist: 'Simon & Garfunkel', song: 'Bridge Over Troubled Water'},
+  {artist: 'Aretha Franklin', song: 'Respect'},
+  {artist: 'Sly And The Family Stone', song: 'Family Affair'},
+  {artist: 'ABBA', song: 'Dancing Queen'},
+  {artist: 'The Beach Boys', song: 'Good Vibrations'},
+  {artist: 'Jimi Hendrix', song: 'Purple Haze'},
+  {artist: 'The Beatles', song: 'Yesterday'},
+  {artist: 'Chuck Berry', song: 'Jonny B Good'},
+  {artist: 'Bob Marley', song: 'No Woman No Cry'},
+  {artist: 'Jeff Buckley', song: 'Hallelujah'},
+  {artist: 'The Police', song: 'Every Breath You Take'},
+  {artist: 'The Beatles', song: 'A Day In The Life'},
+  {artist: 'Ben E King', song: 'Stand By Me'},
+  {artist: 'James Brown', song: "Papa's Got A Brand New Bag"},
+  {artist: 'The Rolling Stones', song: 'Gimme Shelter'},
+  {artist: 'Ray Charles', song: "What'd I Say"},
+  {artist: 'Dire Straits', song: 'Sultans Of Swing'},
+  {artist: 'The Beach Boys', song: 'God Only Knows'},
+  {artist: 'The Righteous Brothers', song: "You've Lost That Lovin' Feeling"},
+  {artist: 'The Who', song: 'My Generation'},
+  {artist: 'Martha Reeves and the Vandellas', song: 'Dancing In The Street'},
+  {artist: 'Prince', song: 'When Doves Cry'},
+  {artist: 'Sam Cooke', song: 'A Change Is Gonna Come'},
+  {artist: 'Ike and Tina Turner', song: 'River Deep Mountain High'},
+  {artist: 'The Emotions', song: 'Best Of My Love'},
+];
+
 const ITEM_SIZE = {
-  size: 120,
+  size: 250,
   margin: 70,
 };
+const SCROLL_MARGIN = 20;
+const IPOD_MARGIN = 20;
+const SCREEN_WIDTH =
+  Dimensions.get('window').width - IPOD_MARGIN * 2 - SCROLL_MARGIN * 2;
+const BIG_BALL_SIZE = 200;
+const BIG_BALL_MARGIN = 0;
+const SMALL_BALL_SIZE = 50;
+const INNER_BALL_SIZE =
+  BIG_BALL_SIZE - SMALL_BALL_SIZE * 2 - BIG_BALL_MARGIN * 2;
+const DEFAULT_COVER_URI =
+  'https://e7.pngegg.com/pngimages/950/513/png-clipart-eighth-note-musical-note-stem-notes-music-download-graphic-arts.png';
 
 function ScrollExample() {
   const position = useSharedValue(0);
@@ -21,14 +87,13 @@ function ScrollExample() {
   const animatedRef = useAnimatedRef();
 
   const itemTotalSize = ITEM_SIZE.size + ITEM_SIZE.margin * 2;
-  const screenWidth = Dimensions.get('window').width;
-  const borderMargin = screenWidth / 2 - itemTotalSize / 2 + ITEM_SIZE.margin;
+  const borderMargin = SCREEN_WIDTH / 2 - itemTotalSize / 2 + ITEM_SIZE.margin;
 
   const scrollToNearestItem = (offset) => {
     'worklet';
     let minDistance;
     let minDistanceIndex = 0;
-    for (let i = 0; i < NUMBER_OF_ITEMS; ++i) {
+    for (let i = 0; i < data.length; ++i) {
       const distance = Math.abs(i * itemTotalSize - offset);
       if (minDistance === undefined) {
         minDistance = distance;
@@ -43,10 +108,15 @@ function ScrollExample() {
     scrollTo(animatedRef, minDistanceIndex * itemTotalSize, 0, true);
   };
 
+  const scrollingCircle = useSharedValue(false);
+
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e, ctx) => {
+      if (scrollingCircle.value) {
+        return;
+      }
       position.value = e.contentOffset.x;
-      //console.log('scroll', position.value);
+      console.log('scroll', position.value);
     },
     onEndDrag: (e, ctx) => {
       scrollToNearestItem(e.contentOffset.x);
@@ -56,49 +126,20 @@ function ScrollExample() {
     },
   });
 
-  // buttons logic
-  const buttons = [
-    {
-      title: '<<',
-      callback: () => {
-        runOnUI(() => {
-          'worklet';
-          scrollTo(animatedRef, 0, 0, true);
-        })();
-      },
+  const handler = useAnimatedGestureHandler({
+    onStart: (e, ctx) => {
+      ctx.start = {x: e.x, y: e.y};
     },
-    {
-      title: '<',
-      callback: () => {
-        runOnUI(() => {
-          'worklet';
-          scrollTo(animatedRef, position.value - itemTotalSize, 0, true);
-        })();
-      },
+    onActive: (e, ctx) => {
+      scrollTo(animatedRef, position.value + e.translationX * 3, 0, true);
     },
-    {
-      title: '>',
-      callback: () => {
-        runOnUI(() => {
-          'worklet';
-          scrollTo(animatedRef, position.value + itemTotalSize, 0, true);
-        })();
-      },
+    onEnd: (e, ctx) => {
+      scrollingCircle.value = false;
     },
-    {
-      title: '>>',
-      callback: () => {
-        // scroll to last
-        runOnUI(() => {
-          'worklet';
-          scrollTo(animatedRef, Infinity, 0, true);
-        })();
-      },
-    },
-  ];
+  });
 
   return (
-    <View>
+    <View style={styles.ipod}>
       <Animated.ScrollView
         ref={animatedRef}
         horizontal={true}
@@ -108,72 +149,110 @@ function ScrollExample() {
         onContentSizeChange={(width, height) => {
           scrollWidth.value = width;
         }}>
-        {Array.from({length: NUMBER_OF_ITEMS}).map((_, i) => {
+        {data.map(({artist, song}, i) => {
           const uas = useAnimatedStyle(() => {
             const style = {};
             const relativeDistance = position.value - i * itemTotalSize;
             const distance = Math.abs(relativeDistance);
             const itemDistance = distance / itemTotalSize;
             let opacity;
-            const translateY = itemTotalSize * itemDistance;
-            let rotateZ = itemDistance * 2;
-            rotateZ = relativeDistance > 0 ? -rotateZ : rotateZ;
             if (itemDistance < 0.5) {
               opacity = 1;
-            } else if (itemDistance >= 0.5 && itemDistance <= 2) {
+            } else if (itemDistance >= 0.5 && itemDistance <= 3) {
               opacity = 0.3;
             } else {
               opacity = 0;
             }
             style.opacity = opacity;
-            //console.log('distance', distance, itemTotalSize, itemDistance);
             if (i === 0) {
               style.marginLeft = borderMargin;
-            } else if (i === NUMBER_OF_ITEMS - 1) {
+            } else if (i === data.length - 1) {
               style.marginRight = borderMargin;
             }
-            style.transform = [{translateY}, {rotateZ}];
             return style;
           });
           return (
             <Animated.View
               key={i}
-              style={[
-                styles.item,
-                {backgroundColor: i % 2 ? 'purple' : 'orange'},
-                uas,
-              ]}
-            />
+              style={[styles.item, {backgroundColor: 'orange'}, uas]}>
+              <Image
+                style={styles.cover}
+                source={{
+                  uri: DEFAULT_COVER_URI,
+                }}
+              />
+              <Text style={styles.label}>{artist}</Text>
+              <Text style={[styles.label, styles.songLabel]}>{song}</Text>
+            </Animated.View>
           );
         })}
       </Animated.ScrollView>
 
-      <View style={styles.buttonWrapper}>
-        {buttons.map(({title, callback}) => {
-          return (
-            <View style={styles.button}>
-              <Button title={title} onPress={callback} />
-            </View>
-          );
-        })}
-      </View>
+      <PanGestureHandler onGestureEvent={handler}>
+        <Animated.View style={styles.ballWrapper}>
+          <View style={styles.innerBall} />
+        </Animated.View>
+      </PanGestureHandler>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  ipod: {
+    backgroundColor: '#D3D3D3',
+    margin: 20,
+    borderRadius: 20,
+  },
+  scroll: {
+    borderRadius: 20,
+    backgroundColor: '#87CEEB',
+    margin: SCROLL_MARGIN,
+  },
   item: {
     width: ITEM_SIZE.size,
     height: ITEM_SIZE.size,
     margin: ITEM_SIZE.margin,
   },
-  buttonWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  ballWrapper: {
+    borderWidth: BIG_BALL_MARGIN,
+    borderRadius: BIG_BALL_SIZE,
+    width: BIG_BALL_SIZE,
+    height: BIG_BALL_SIZE,
+    marginLeft: SCREEN_WIDTH / 2 - BIG_BALL_SIZE / 2 + SCROLL_MARGIN,
+    marginTop: 40,
+    marginBottom: 40,
+    backgroundColor: 'white',
   },
-  button: {
-    flex: 1,
+  ball: {
+    width: SMALL_BALL_SIZE,
+    height: SMALL_BALL_SIZE,
+    backgroundColor: 'orange',
+    borderRadius: SMALL_BALL_SIZE,
+    position: 'absolute',
+  },
+  innerBall: {
+    position: 'absolute',
+    width: INNER_BALL_SIZE,
+    height: INNER_BALL_SIZE,
+    borderRadius: INNER_BALL_SIZE,
+    top: SMALL_BALL_SIZE,
+    left: SMALL_BALL_SIZE,
+    backgroundColor: '#D3D3D3',
+  },
+  label: {
+    fontSize: 15,
+    width: ITEM_SIZE.size,
+    textAlign: 'center',
+  },
+  songLabel: {
+    fontSize: 20,
+  },
+  cover: {
+    width: 100,
+    height: 100,
+    backgroundColor: 'white',
+    margin: 20,
+    marginLeft: ITEM_SIZE.size / 2 - 100 / 2,
   },
 });
 
