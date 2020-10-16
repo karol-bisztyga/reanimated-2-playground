@@ -1,5 +1,42 @@
-import React from 'react';
-import {View, StyleSheet, Dimensions, Image, Text} from 'react-native';
+// PASTE
+/*
+export function One() {
+  return (
+    <View style={styles.ipod}>
+      <ScrollView
+        horizontal={true}
+        style={styles.scroll}
+        showsHorizontalScrollIndicator={false}>
+        {data.map(({artist, song}, i) => {
+          return (
+            <View key={i} style={styles.item}>
+              <Image
+                style={styles.cover}
+                source={{
+                  uri: DEFAULT_COVER_URI,
+                }}
+              />
+              <Text style={styles.label}>{artist}</Text>
+              <Text style={[styles.label, styles.songLabel]}>{song}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+*/
+
+import React, {useState} from 'react';
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Image,
+  Text,
+  ScrollView,
+  Button,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -65,8 +102,6 @@ let data = [
   {artist: 'The Emotions', song: 'Best Of My Love'},
 ];
 
-data = data.slice(0, 10);
-
 const ITEM_SIZE = {
   size: 250,
   margin: 70,
@@ -82,118 +117,19 @@ const INNER_BALL_SIZE =
   BIG_BALL_SIZE - SMALL_BALL_SIZE * 2 - BIG_BALL_MARGIN * 2;
 const DEFAULT_COVER_URI =
   'https://e7.pngegg.com/pngimages/950/513/png-clipart-eighth-note-musical-note-stem-notes-music-download-graphic-arts.png';
+const itemTotalSize = ITEM_SIZE.size + ITEM_SIZE.margin * 2;
+const borderMargin = SCREEN_WIDTH / 2 - itemTotalSize / 2 + ITEM_SIZE.margin;
 
-function ScrollExample() {
-  const position = useSharedValue(0);
-  const animatedRef = useAnimatedRef();
-
-  const itemTotalSize = ITEM_SIZE.size + ITEM_SIZE.margin * 2;
-  const borderMargin = SCREEN_WIDTH / 2 - itemTotalSize / 2 + ITEM_SIZE.margin;
-
-  const scrollToNearestItem = (offset) => {
-    'worklet';
-    let minDistance;
-    let minDistanceIndex = 0;
-    for (let i = 0; i < data.length; ++i) {
-      const distance = Math.abs(i * itemTotalSize - offset);
-      if (minDistance === undefined) {
-        minDistance = distance;
-      } else {
-        if (distance < minDistance) {
-          minDistance = distance;
-          minDistanceIndex = i;
-        }
-      }
-    }
-
-    scrollTo(animatedRef, minDistanceIndex * itemTotalSize, 0, true);
-  };
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (e, ctx) => {
-      position.value = e.contentOffset.x;
-    },
-    onEndDrag: (e, ctx) => {
-      scrollToNearestItem(e.contentOffset.x);
-    },
-    onMomentumEnd: (e, ctx) => {
-      scrollToNearestItem(e.contentOffset.x);
-    },
-  });
-
-  const gestureHandler = useAnimatedGestureHandler({
-    onStart: (e, ctx) => {
-      ctx.start = {x: e.x, y: e.y};
-      ctx.last = ctx.start;
-    },
-    onActive: (e, ctx) => {
-      const currentPoz = {x: e.x, y: e.y};
-      const lastPoz = ctx.last;
-      ctx.last = currentPoz;
-      if (currentPoz.x === lastPoz.x && lastPoz.y === currentPoz.y) {
-        // no change so far
-        return;
-      }
-      const changeVector = {
-        x: currentPoz.x - lastPoz.x,
-        y: currentPoz.y - lastPoz.y,
-      };
-      const toCenterV = {
-        x: BIG_BALL_SIZE / 2 - lastPoz.x,
-        y: BIG_BALL_SIZE / 2 - lastPoz.y,
-      };
-      const crossProd =
-        changeVector.x * toCenterV.y - changeVector.y * toCenterV.x;
-      if (crossProd === 0) {
-        return;
-      }
-      const dist = Math.sqrt(changeVector.x ** 2 + changeVector.y ** 2);
-      // up or down
-      const sign = crossProd < 0 ? -1 : 1;
-      const arr = [0, itemTotalSize * (data.length - 1)];
-      position.value = interpolate(
-        position.value + sign * dist * 5,
-        arr,
-        arr,
-        Extrapolate.CLAMP,
-      );
-      scrollTo(animatedRef, position.value, 0, false);
-    },
-    onEnd: (e, ctx) => {
-      scrollToNearestItem(position.value);
-    },
-  });
-
+export function One() {
   return (
     <View style={styles.ipod}>
-      <Animated.ScrollView
-        ref={animatedRef}
+      <ScrollView
         horizontal={true}
         style={styles.scroll}
-        scrollEventThrottle={1}
-        showsHorizontalScrollIndicator={false}
-        onScroll={scrollHandler}>
+        showsHorizontalScrollIndicator={false}>
         {data.map(({artist, song}, i) => {
-          const uas = useAnimatedStyle(() => {
-            const style = {};
-            const itemDistance =
-              Math.abs(position.value - i * itemTotalSize) / itemTotalSize;
-            let opacity = 1;
-            if (itemDistance >= 0.5) {
-              opacity = 0.3;
-            } else if (itemDistance > 3) {
-              opacity = 0;
-            }
-            style.opacity = opacity;
-            if (i === 0) {
-              style.marginLeft = borderMargin;
-            } else if (i === data.length - 1) {
-              style.marginRight = borderMargin;
-            }
-            return style;
-          });
           return (
-            <Animated.View key={i} style={[styles.item, uas]}>
+            <View key={i} style={styles.item}>
               <Image
                 style={styles.cover}
                 source={{
@@ -202,16 +138,10 @@ function ScrollExample() {
               />
               <Text style={styles.label}>{artist}</Text>
               <Text style={[styles.label, styles.songLabel]}>{song}</Text>
-            </Animated.View>
+            </View>
           );
         })}
-      </Animated.ScrollView>
-
-      <PanGestureHandler onGestureEvent={gestureHandler}>
-        <Animated.View style={styles.ballWrapper}>
-          <View style={styles.innerBall} />
-        </Animated.View>
-      </PanGestureHandler>
+      </ScrollView>
     </View>
   );
 }
@@ -275,5 +205,3 @@ const styles = StyleSheet.create({
     marginLeft: ITEM_SIZE.size / 2 - 100 / 2,
   },
 });
-
-export default ScrollExample;

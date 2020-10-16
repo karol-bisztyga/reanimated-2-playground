@@ -1,5 +1,13 @@
-import React from 'react';
-import {View, StyleSheet, Dimensions, Image, Text} from 'react-native';
+import React, {useState} from 'react';
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Image,
+  Text,
+  ScrollView,
+  Button,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -65,8 +73,6 @@ let data = [
   {artist: 'The Emotions', song: 'Best Of My Love'},
 ];
 
-data = data.slice(0, 10);
-
 const ITEM_SIZE = {
   size: 250,
   margin: 70,
@@ -82,14 +88,11 @@ const INNER_BALL_SIZE =
   BIG_BALL_SIZE - SMALL_BALL_SIZE * 2 - BIG_BALL_MARGIN * 2;
 const DEFAULT_COVER_URI =
   'https://e7.pngegg.com/pngimages/950/513/png-clipart-eighth-note-musical-note-stem-notes-music-download-graphic-arts.png';
+const itemTotalSize = ITEM_SIZE.size + ITEM_SIZE.margin * 2;
+const borderMargin = SCREEN_WIDTH / 2 - itemTotalSize / 2 + ITEM_SIZE.margin;
 
-function ScrollExample() {
-  const position = useSharedValue(0);
+export function Three() {
   const animatedRef = useAnimatedRef();
-
-  const itemTotalSize = ITEM_SIZE.size + ITEM_SIZE.margin * 2;
-  const borderMargin = SCREEN_WIDTH / 2 - itemTotalSize / 2 + ITEM_SIZE.margin;
-
   const scrollToNearestItem = (offset) => {
     'worklet';
     let minDistance;
@@ -109,6 +112,7 @@ function ScrollExample() {
     scrollTo(animatedRef, minDistanceIndex * itemTotalSize, 0, true);
   };
 
+  const position = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e, ctx) => {
       position.value = e.contentOffset.x;
@@ -175,7 +179,6 @@ function ScrollExample() {
         onScroll={scrollHandler}>
         {data.map(({artist, song}, i) => {
           const uas = useAnimatedStyle(() => {
-            const style = {};
             const itemDistance =
               Math.abs(position.value - i * itemTotalSize) / itemTotalSize;
             let opacity = 1;
@@ -184,13 +187,12 @@ function ScrollExample() {
             } else if (itemDistance > 3) {
               opacity = 0;
             }
-            style.opacity = opacity;
-            if (i === 0) {
-              style.marginLeft = borderMargin;
-            } else if (i === data.length - 1) {
-              style.marginRight = borderMargin;
-            }
-            return style;
+            return {
+              opacity,
+              marginLeft: i === 0 ? borderMargin : ITEM_SIZE.margin,
+              marginRight:
+                i === data.length - 1 ? borderMargin : ITEM_SIZE.margin,
+            };
           });
           return (
             <Animated.View key={i} style={[styles.item, uas]}>
@@ -275,5 +277,3 @@ const styles = StyleSheet.create({
     marginLeft: ITEM_SIZE.size / 2 - 100 / 2,
   },
 });
-
-export default ScrollExample;

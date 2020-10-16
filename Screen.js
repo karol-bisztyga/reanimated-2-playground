@@ -7,6 +7,7 @@ import {createStackNavigator} from 'react-navigation-stack';
 
 import Events from './blog_apps/events/Events';
 import ScrollEvents from './blog_apps/scroll_events/ScrollEvents';
+import {One, Two, Three} from './blog_apps/scroll_events/snippets';
 
 const SCREENS = {
   Events: {
@@ -16,6 +17,18 @@ const SCREENS = {
   ScrollEvents: {
     screen: ScrollEvents,
     title: '🆕 Scroll Events',
+  },
+  One: {
+    screen: One,
+    title: '🆕 Scroll Events - snippet One',
+  },
+  Two: {
+    screen: Two,
+    title: '🆕 Scroll Events - snippet Two',
+  },
+  Three: {
+    screen: Three,
+    title: '🆕 Scroll Events - snippet Three',
   },
 };
 
