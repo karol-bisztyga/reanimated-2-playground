@@ -128,19 +128,19 @@ function ScrollExample() {
     },
     onActive: (e, ctx) => {
       const currentPoz = {x: e.x, y: e.y};
-      const lastPoz = ctx.last;
+      const lastPos = ctx.last;
       ctx.last = currentPoz;
-      if (currentPoz.x === lastPoz.x && lastPoz.y === currentPoz.y) {
+      if (currentPoz.x === lastPos.x && lastPos.y === currentPoz.y) {
         // no change so far
         return;
       }
       const changeVector = {
-        x: currentPoz.x - lastPoz.x,
-        y: currentPoz.y - lastPoz.y,
+        x: currentPoz.x - lastPos.x,
+        y: currentPoz.y - lastPos.y,
       };
       const toCenterV = {
-        x: BIG_BALL_SIZE / 2 - lastPoz.x,
-        y: BIG_BALL_SIZE / 2 - lastPoz.y,
+        x: BIG_BALL_SIZE / 2 - lastPos.x,
+        y: BIG_BALL_SIZE / 2 - lastPos.y,
       };
       const crossProd =
         changeVector.x * toCenterV.y - changeVector.y * toCenterV.x;
