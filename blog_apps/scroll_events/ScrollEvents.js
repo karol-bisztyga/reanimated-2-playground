@@ -71,10 +71,8 @@ const ITEM_SIZE = {
   size: 250,
   margin: 70,
 };
-const SCROLL_MARGIN = 20;
-const IPOD_MARGIN = 20;
-const SCREEN_WIDTH =
-  Dimensions.get('window').width - IPOD_MARGIN * 2 - SCROLL_MARGIN * 2;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const BIG_BALL_SIZE = 200;
 const BIG_BALL_MARGIN = 0;
 const SMALL_BALL_SIZE = 50;
@@ -219,28 +217,28 @@ function ScrollExample() {
 const styles = StyleSheet.create({
   ipod: {
     backgroundColor: '#D3D3D3',
-    margin: 20,
     borderRadius: 20,
+    height: SCREEN_HEIGHT,
   },
   scroll: {
     borderRadius: 20,
     backgroundColor: '#87CEEB',
-    margin: SCROLL_MARGIN,
   },
   item: {
     width: ITEM_SIZE.size,
     height: ITEM_SIZE.size,
     margin: ITEM_SIZE.margin,
     backgroundColor: 'orange',
+    marginTop: (SCREEN_HEIGHT - 200 - BIG_BALL_SIZE - ITEM_SIZE.size) / 2,
   },
   ballWrapper: {
     borderWidth: BIG_BALL_MARGIN,
     borderRadius: BIG_BALL_SIZE,
     width: BIG_BALL_SIZE,
     height: BIG_BALL_SIZE,
-    marginLeft: SCREEN_WIDTH / 2 - BIG_BALL_SIZE / 2 + SCROLL_MARGIN,
-    marginTop: 40,
-    marginBottom: 40,
+    marginLeft: SCREEN_WIDTH / 2 - BIG_BALL_SIZE / 2,
+    marginTop: 100,
+    marginBottom: 100,
     backgroundColor: 'white',
   },
   ball: {
